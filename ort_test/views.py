@@ -13,10 +13,10 @@ class PassOldTestView(APIView):
 
     def post(self, request):
         serializer_context = {'request': request}
-        serializer = PassOrtTestSerializer(data=request.data, context=serializer_context)
+        serializer = PassOrtTestSerializer(data=request.data, context=serializer_context, many=True)
         
         if serializer.is_valid():
-            serializer.check_answer(serializer.validated_data)
+            serializer.create(serializer.validated_data)
             return Response("Test completed successfully", status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

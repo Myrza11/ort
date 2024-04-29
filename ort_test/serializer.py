@@ -32,14 +32,19 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
     question_id = serializers.IntegerField()
     answer = serializers.CharField()
     test_id = serializers.IntegerField()
+    user_id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
-        print('yuytf')
         self.create_results(validated_data)
         self.check_answer(validated_data)
         response = self.finalize_response(self.context['request'], None)
         return response
-    
+
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.objResult = None 
+            self.Score = 0
+
     def create_results(self, validated_data):
         test_id = validated_data.get('test_id')
         test = Test.objects.filter(id=test_id).first()
@@ -54,12 +59,9 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
         scheduled_end_time = start_time + timedelta(minutes=duration.total_seconds() // 60)
 
         objResult = Results.objects.create(user_id=user, test_id=objtest, start_time=start_time, scheduled_end_time=scheduled_end_time)
-
+        self.objResult = objResult
         return objResult
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.objResultAnswer = None 
 
     def check_answer(self, validated_data):
         print('jgchghfgcg')
@@ -77,33 +79,38 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
                 objResultAnswer.FALSE
             else:
                 objResultAnswer.TRUE
+                self.Score += 1
                 break
         objResultAnswer.save()
-        self.objResultAnswer = objResultAnswer
+
         return None
     
     def finalize_response(self, request, response, *args, **kwargs):
-        # Ваш код, который будет выполнен после завершения check_answer
-        # response - это результат check_answer
-        # request - запрос, который был отправлен
-        print('ghvgh')
-        result_id = self.objResultAnswer.result_id
-        correctAnswers = ResultAnswer.objects.filter(id=result_id, is_correct='TRUE').count()
-        incorrecttAnswers = ResultAnswer.objects.filter(id=result_id, is_correct='FALSE').count()
-        uncompletedAnswers = ResultAnswer.objects.filter(id=result_id, is_correct='UNCOMPLETED').count()
+        # Получение данных о результате теста
+        result_id = self.objResult.id
 
-        totalAnswers = correctAnswers + incorrecttAnswers + uncompletedAnswers
-        total = (correctAnswers * 100) / totalAnswers
+        correct_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='TRUE').count()
+        incorrect_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='FALSE').count()
+        uncompleted_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='UNCOMPLETED').count()
+        total_answers = correct_answers + incorrect_answers + uncompleted_answers
+        #score = (correct_answers * 100) / total_answers
+        score = self.Score
+        print(score)
+
+        # Обновление информации о результате теста
         results = Results.objects.get(id=result_id)
-        results.score = total
-        results.end_time = timezone.now
-
-        starttest = results.start_time
-        endtest = results.end_time
-        scheduled_end_time = results.scheduled_end_time
-        if scheduled_end_time - endtest > starttest:
-            raise serializers.ValidationError('вы закончили тест не вовремя')
+        results.end_time = timezone.now()
+        results.score = score
         results.save()
+
+        # Проверка, превысил ли пользователь запланированное время
+        start_time = results.start_time
+        end_time = results.end_time
+        scheduled_end_time = results.scheduled_end_time
+
+        if end_time > scheduled_end_time:
+            raise serializers.ValidationError('Вы закончили тест не вовремя')
+
         return results
 
     class Meta:
