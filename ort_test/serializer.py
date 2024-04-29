@@ -31,41 +31,26 @@ class StartOrtTestSerializer(serializers.ModelSerializer):
 class PassOrtTestSerializer(serializers.ModelSerializer):
     question_id = serializers.IntegerField()
     answer = serializers.CharField()
-    test_id = serializers.IntegerField()
+    test_id = serializers.IntegerField(required=False)
     user_id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
-        self.create_results(validated_data)
         self.check_answer(validated_data)
-        response = self.finalize_response(self.context['request'], None)
+        response = self.finalize_response(validated_data)
         return response
 
     def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.objResult = None 
             self.Score = 0
-
-    def create_results(self, validated_data):
-        test_id = validated_data.get('test_id')
-        test = Test.objects.filter(id=test_id).first()
-        if not test:
-            raise serializers.ValidationError('This test id does not exist')
-        
-        user = self.context['request'].user
-        objtest = Test.objects.get(id=test_id)
-
-        start_time = timezone.now()
-        duration = objtest.duretion
-        scheduled_end_time = start_time + timedelta(minutes=duration.total_seconds() // 60)
-
-        objResult = Results.objects.create(user_id=user, test_id=objtest, start_time=start_time, scheduled_end_time=scheduled_end_time)
-        self.objResult = objResult
-        return objResult
     
-
     def check_answer(self, validated_data):
         print('jgchghfgcg')
-        objResult = self.create_results(validated_data)
+        result_id = self.context['pk']
+        print(result_id)
+        print('hello')
+        #result_id = validated_data.get('result_id')
+        objResult = Results.objects.get(id=result_id)
         question_id = validated_data.get('question_id')
         question = Question.objects.filter(id=question_id).first()
         answer = validated_data.get('answer')
@@ -85,9 +70,9 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
 
         return None
     
-    def finalize_response(self, request, response, *args, **kwargs):
+    def finalize_response(self, validated_data):
         # Получение данных о результате теста
-        result_id = self.objResult.id
+        result_id = self.context['pk']
 
         correct_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='TRUE').count()
         incorrect_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='FALSE').count()
@@ -109,6 +94,8 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
         scheduled_end_time = results.scheduled_end_time
 
         if end_time > scheduled_end_time:
+            results.score = 0
+            results.save()
             raise serializers.ValidationError('Вы закончили тест не вовремя')
 
         return results

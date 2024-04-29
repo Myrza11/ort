@@ -11,8 +11,8 @@ class PassOldTestView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PassOrtTestSerializer
 
-    def post(self, request):
-        serializer_context = {'request': request}
+    def post(self, request, pk):
+        serializer_context = {'request': request, 'pk': pk}
         serializer = PassOrtTestSerializer(data=request.data, context=serializer_context, many=True)
         
         if serializer.is_valid():
