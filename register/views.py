@@ -9,12 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
+from drf_spectacular.utils import extend_schema
+
 
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
 
+    @extend_schema(tags=['RegisterCreate'])
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         data = request.data
@@ -53,6 +56,7 @@ class UserRegistrationView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @extend_schema(tags=['RegisterCreate'])
     def patch(self, request):
         confirmation_code = request.data.get('confirmation_code')
         if not confirmation_code:
@@ -75,7 +79,8 @@ class CustomUserLoginView(TokenObtainPairView):
 
 
 class CustomUserTokenRefreshView(APIView):
-    
+
+    @extend_schema(tags=['RegisterRefresh'])
     def post(self, request, *args, **kwargs):
         try:
             refresh_token = request.data['refresh']
@@ -92,6 +97,7 @@ class ForgotPasswordView(generics.CreateAPIView):
     serializer_class = ForgotPasswordSerializer
     queryset = CustomUser.objects.all()
 
+    @extend_schema(tags=['RegisterChange'])
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -123,6 +129,7 @@ class ResetPasswordView(generics.CreateAPIView):
     serializer_class = ResetPasswordSerializer
     queryset = CustomUser.objects.all()
 
+    @extend_schema(tags=['RegisterChange'])
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -154,6 +161,7 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ChangePasswordSerializer
 
+    @extend_schema(tags=['RegisterChange'])
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -171,6 +179,7 @@ class ChangePasswordView(APIView):
 class ChangeUsernameView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(tags=['RegisterChange'])
     def post(self, request):
         serializer = ChangeUsernameSerializer(data=request.data)
         if serializer.is_valid():
@@ -192,17 +201,25 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
+    @extend_schema(tags=['RegisterList'])
+    def get(self):
+        return self.queryset
 
-class UserUpdateView(generics.RetrieveUpdateAPIView):
+
+class UserUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
-    def partial_update(self, request, *args, **kwargs):
+    @extend_schema(
+        tags=['RegisterChange'],
+        operation_id='update_user_with_patch'
+    )
+    def patch(self, request, *args, **kwargs):
         allowed_fields = ['avatar']
         data = {k: v for k, v in request.data.items() if k in allowed_fields}
 
-        serializer = self.get_serializer(self.get_object(), data=data, partial=True)
+        serializer = self.serializer_class(self.get_object(), data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
@@ -213,12 +230,15 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
-    def get_object(self):
+    @extend_schema(tags=['RegisterChange'])
+    def get(self):
         return self.request.user
 
 
 class CheckUsernameView(APIView):
     serializer_class = ChangeUsernameSerializer
+
+    @extend_schema(tags=['RegisterChange'])
     def post(self, request):
         username = request.data.get('username', '')
         if username:

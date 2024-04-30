@@ -10,15 +10,15 @@ import re
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=True)
+    password_confirm = serializers.CharField(write_only=True, required=True)
     username = serializers.CharField(
         validators=[RegexValidator(regex='^[a-zA-Z]*$', message='Only letters are allowed.'),
-                    UniqueValidator(queryset=CustomUser.objects.all(), message='This username is already in use.')]
+                    UniqueValidator(queryset=CustomUser.objects.all(), message='This username is already in use.')], required=True
     )
-    email = serializers.EmailField()
-    name = serializers.CharField(max_length=20)
-    surname = serializers.CharField(max_length=20)
+    email = serializers.EmailField(required=True)
+    name = serializers.CharField(max_length=20, required=True)
+    surname = serializers.CharField(max_length=20, required=True)
 
     class Meta:
         model = CustomUser

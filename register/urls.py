@@ -12,7 +12,7 @@ urlpatterns = [
     path('change-username/', ChangeUsernameView.as_view()),
     path('logout/', TokenBlacklistView.as_view()),
     path('user-list/', UserListView.as_view()),
-    path('user-update/<int:pk>/', UserUpdateView.as_view()),
+    path('user-update-avatar/<int:pk>/', UserUpdateView.as_view()),
     path('user-profile/', UserProfileView.as_view()),
     path('check-username/', CheckUsernameView.as_view()),
 

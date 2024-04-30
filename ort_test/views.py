@@ -3,14 +3,17 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .serializer import *
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
+from drf_spectacular.utils import extend_schema
+
 # Create your views here.
 
 
-class PassOldTestView(APIView):
+class PassTestView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PassOrtTestSerializer
-
+    
+    @extend_schema(tags=['OrtPass'])
     def post(self, request, pk):
         serializer_context = {'request': request, 'pk': pk}
         serializer = PassOrtTestSerializer(data=request.data, context=serializer_context, many=True)
@@ -26,6 +29,7 @@ class StartTestView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StartTestSerializer
 
+    @extend_schema(tags=['OrtPass'])
     def post(self, request):
         serializer_context = {'request': request}
         serializer = StartTestSerializer(data=request.data, context=serializer_context)
@@ -37,31 +41,48 @@ class StartTestView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
-class PassTestView(APIView):
+class SubjectListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = GetSubjectSerializer
+    queryset = Subject.objects.all()
+
+    @extend_schema(tags=['OrtList'])
+    def get(self):
+         return self.queryset
+
+class TestListView(generics.ListAPIView):
+    serializer_class = GetTestSerializer
+
+    @extend_schema(tags=['OrtList'])
+    def get(self):
+        pk = self.kwargs['pk']  # предполагается, что 'my_value' передается в URL
+        queryset = Test.objects.filter(subject_id=pk)
+        return queryset
+    
+
+class QuestionListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = GetQuestionSerializer
+    queryset = Question.objects.all()
+
+    @extend_schema(tags=['OrtList'])    
+    def get(self):
+        pk = self.kwargs['pk']
+        queryset = Question.objects.filter(topic_id=pk)
+        return queryset
+
+
+class ResultsListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = PassTestSerializer
+    serializer_class = GetTestSerializer
+    queryset = Results.objects.all()
 
-    def post(self, request):
-        serializer_context = {'request': request}
-        serializer = PassTestSerializer(data=request.data, context=serializer_context)
-        
-        if serializer.is_valid():
-            serializer.check_answer(serializer.validated_data)
-            return Response("Ответ принят", status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+    @extend_schema(tags=['OrtList'])
+    def get(self):
+        pk = self.kwargs[pk]
+        queryset = Results.objects.filter(user_id=pk)
+        return queryset
 
-class FinishTestView(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = FinishTestSerializer
 
-    def post(self, request):
-        serializer_context = {'request': request}
-        serializer = FinishTestSerializer(data=request.data, context=serializer_context)
-        
-        if serializer.is_valid():
-            serializer.finalize_response(serializer.validated_data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
