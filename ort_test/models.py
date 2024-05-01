@@ -89,3 +89,11 @@ class ResultAnswer(models.Model):
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE)
     is_correct = models.CharField(max_length=10, choices=CHOISE_CORRECT, default=UNCOPLATED)
 
+
+class ResultAnalysis(models.Model):
+    topic_id = models.ForeignKey(Topics, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    result_id = models.ForeignKey(Results, on_delete=models.CASCADE)
+    correct_answers = models.IntegerField(null=True, blank=True)
+    total_questions = models.IntegerField(null=True, blank=True)
+    date_recorded = models.DateTimeField(default=timezone.now)

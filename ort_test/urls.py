@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('passold_ort_test/<int:pk>/', PassTestView.as_view()),
+    path('pass_ort_test/<int:pk>/', PassTestView.as_view()),
     path('start_ort_test/', StartTestView.as_view()),
     path('get_subject/', SubjectListView.as_view()),
     path('subjects/<int:pk>/tests/', TestListView.as_view()),
