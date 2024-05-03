@@ -35,8 +35,9 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
 
         if not question or answer is None:
             raise serializers.ValidationError('queston_id is not correct or answer is None')
-        objTestQuestion = TestQuestion.objects.filter(test_id=objResult.test_id).exclude(question_id=question_id)
         
+        if question not in Question.objects.filter(id__in=TestQuestion.objects.filter(test_id=objResult.test_id.id)):
+            raise serializers.ValidationError('this question is not in this test')
         
         objanswers = Answer.objects.filter(question_id=question_id)
         objResultAnswer = ResultAnswer.objects.create(result_id=objResult, question_id=question)
@@ -67,13 +68,13 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
         total = 0
         for answer in objtestquestion:
             objQuestion = Question.objects.get(id=answer.question_id.id)
-            objResultAnswer = ResultAnswer.objects.get(question_id=answer.question_id.id, result_id=result_id)
-            if objResultAnswer.TRUE:
-                result += points[objQuestion.question_type]
-                total += points[objQuestion.question_type]
-            else:
-                result -= points[objQuestion.question_type]
-                total += points[objQuestion.question_type]
+            objResultAnswer = ResultAnswer.objects.filter(question_id=answer.question_id.id, result_id=result_id)
+            for objone in objResultAnswer:
+                if objone.is_correct == 'TRUE':
+                    result += points[objQuestion.question_type]
+                    total += points[objQuestion.question_type]
+                else:
+                    total += points[objQuestion.question_type]
 
         total_answers = correct_answers + incorrect_answers + uncompleted_answers
         unsubmitted = len(objtestquestion) - total_answers
@@ -118,8 +119,6 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
             objResultAnalysis.save()
 
             for question in objResultAnswers:
-                print('djn')
-                print(question.is_correct)
                 if question.is_correct == 'TRUE':
                     objResultAnalysis.correct_answers = objResultAnalysis.correct_answers + 1
             

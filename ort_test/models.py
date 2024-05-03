@@ -10,7 +10,7 @@ class Subject(models.Model):
     description = models.TextField()
 
     def __str__(self):
-        return self.na
+        return self.name
 
 class Topics(models.Model):
     name = models.CharField(max_length=50)
