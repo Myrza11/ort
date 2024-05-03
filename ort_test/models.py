@@ -10,10 +10,19 @@ class Subject(models.Model):
     description = models.TextField()
 
     def __str__(self):
-        return self.name
-    
+        return self.na
 
 class Topics(models.Model):
+    name = models.CharField(max_length=50)
+    subject_id = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='topics_photo/')
+    description = models.TextField()
+
+    def __str__(self):
+            return self.name
+
+
+class Question(models.Model):
     HARD = 'HARD'
     MEDIOUM = 'MEDIOM'
     EASY = 'EASY'
@@ -21,20 +30,10 @@ class Topics(models.Model):
         (HARD, 'HARD'),
         (MEDIOUM, 'MEDIOUM'),
         (EASY, 'EASY')]
-    name = models.CharField(max_length=50)
-    subject_id = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='topics_photo/')
-    description = models.TextField()
-    quetion_type = models.CharField(max_length=20, choices=Level_Choises)
-
-    def __str__(self):
-            return self.name
-
-
-class Question(models.Model):
     question_text = models.TextField()
     image = models.ImageField(upload_to='question/')
     topic_id = models.ForeignKey(Topics, on_delete=models.CASCADE)
+    question_type = models.CharField(max_length=20, choices=Level_Choises)
 
     def __str__(self):
         return f'вопрос по {self.topic_id.name} {self.question_text}'
