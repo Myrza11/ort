@@ -24,24 +24,21 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
     
     def check_answer(self, validated_data):
         result_id = self.context['pk']
-        try:
-            objResult = Results.objects.get(id=result_id)
-        except:
-            raise serializers.ValidationError('this test does not exist')
-        
         question_id = validated_data.get('question_id')
         question = Question.objects.filter(id=question_id).first()
         answer = validated_data.get('answer')
 
+        try:
+            objResult = Results.objects.get(id=result_id)
+        except:
+            raise serializers.ValidationError('this test does not exist')
         if not question or answer is None:
             raise serializers.ValidationError('queston_id is not correct or answer is None')
-        
         if question not in Question.objects.filter(id__in=TestQuestion.objects.filter(test_id=objResult.test_id.id)):
             raise serializers.ValidationError('this question is not in this test')
         
         objanswers = Answer.objects.filter(question_id=question_id)
         objResultAnswer = ResultAnswer.objects.create(result_id=objResult, question_id=question)
-
         for objanswer in objanswers:
             if objanswer.answer != answer:
                 objResultAnswer.is_correct = 'FALSE'
@@ -58,11 +55,6 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
         objResult = Results.objects.get(id=result_id)
         objtestquestion = TestQuestion.objects.filter(test_id=objResult.test_id)
         
-        
-        correct_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='TRUE').count()
-        incorrect_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='FALSE').count()
-        uncompleted_answers = ResultAnswer.objects.filter(result_id=result_id, is_correct='UNCOMPLETED').count()
-
         points = {'EASY': 1, 'MEDIOM': 2, 'HARD': 3}
         result = 0
         total = 0
@@ -75,17 +67,12 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
                     total += points[objQuestion.question_type]
                 else:
                     total += points[objQuestion.question_type]
+        score = (result * 100) / total   
 
-        total_answers = correct_answers + incorrect_answers + uncompleted_answers
-        unsubmitted = len(objtestquestion) - total_answers
-        score1 = self.Score
-        score = (result * 100) / total
-        
         results = Results.objects.get(id=result_id)
         results.end_time = timezone.now()
         results.score = score
         results.save()
-
         end_time = results.end_time
         scheduled_end_time = results.scheduled_end_time
 
@@ -124,8 +111,6 @@ class PassOrtTestSerializer(serializers.ModelSerializer):
             
             objResultAnalysis.save()
         return None
-
-
 
     class Meta:
         model = Results
@@ -175,6 +160,7 @@ class GetQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = '__all__' 
+
 
 class GetResultSerializer(serializers.ModelSerializer):
     class Meta:

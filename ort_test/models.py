@@ -12,6 +12,7 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
+
 class Topics(models.Model):
     name = models.CharField(max_length=50)
     subject_id = models.ForeignKey(Subject, on_delete=models.CASCADE)
@@ -49,8 +50,6 @@ class Answer(models.Model):
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE)
     answer = models.TextField()
     is_correct = models.CharField(max_length=10, choices=CHOISE_CORRECT)
-
-
 
 
 class Test(models.Model):
