@@ -136,8 +136,11 @@ class StartTestSerializer(serializers.ModelSerializer):
         scheduled_end_time = start_time + timedelta(minutes=duration.total_seconds() // 60)
 
         objResult = Results.objects.create(user_id=user, test_id=objtest, start_time=start_time, scheduled_end_time=scheduled_end_time)
+        question_id = TestQuestion.objects.filter(test_id=test_id).values_list('question_id')
 
-        return objResult
+        
+        a = Question.objects.filter(id__in=question_id)
+        return a
     
     class Meta:
         model = Results
@@ -166,3 +169,4 @@ class GetResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Results
         fields = '__all__'
+        

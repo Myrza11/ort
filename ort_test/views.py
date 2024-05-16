@@ -35,11 +35,11 @@ class StartTestView(APIView):
         serializer = StartTestSerializer(data=request.data, context=serializer_context)
         
         if serializer.is_valid():
-            serializer.create_results(serializer.validated_data)
-            return Response("Test started", status=status.HTTP_200_OK)
+            questions = serializer.create_results(serializer.validated_data)
+            question_data = GetQuestionSerializer(questions, many=True).data  # Serialize the questions
+            return Response(question_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 
 class SubjectListView(generics.ListAPIView):
     permission_classes = [AllowAny]
@@ -55,7 +55,7 @@ class TestListView(generics.ListAPIView):
 
     @extend_schema(tags=['OrtList'])
     def get(self):
-        pk = self.kwargs['pk']  # предполагается, что 'my_value' передается в URL
+        pk = self.kwargs['pk']  
         queryset = Test.objects.filter(subject_id=pk)
         return queryset
     
@@ -82,6 +82,7 @@ class ResultsListView(generics.ListAPIView):
         pk = self.kwargs[pk]
         queryset = Results.objects.filter(user_id=pk)
         return queryset
+
 
 
 
