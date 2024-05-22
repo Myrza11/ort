@@ -47,17 +47,16 @@ class SubjectListView(generics.ListAPIView):
     queryset = Subject.objects.all()
 
     @extend_schema(tags=['OrtList'])
-    def get(self):
+    def get_subject(self):
          return self.queryset
 
 class TestListView(generics.ListAPIView):
     serializer_class = GetTestSerializer
 
     @extend_schema(tags=['OrtList'])
-    def get(self):
-        pk = self.kwargs['pk']  
-        queryset = Test.objects.filter(subject_id=pk)
-        return queryset
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        return Test.objects.filter(subject_id=pk)
     
 
 class QuestionListView(generics.ListAPIView):
@@ -66,9 +65,11 @@ class QuestionListView(generics.ListAPIView):
     queryset = Question.objects.all()
 
     @extend_schema(tags=['OrtList'])    
-    def get(self):
+    def get_question(self):
         pk = self.kwargs['pk']
-        queryset = Question.objects.filter(topic_id=pk)
+        queryset = Question.objects.filter(topic_id=Topics.objects.get(id=pk))
+        if len(queryset) is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         return queryset
 
 
@@ -78,7 +79,7 @@ class ResultsListView(generics.ListAPIView):
     queryset = Results.objects.all()
 
     @extend_schema(tags=['OrtList'])
-    def get(self):
+    def get_results(self):
         pk = self.kwargs[pk]
         queryset = Results.objects.filter(user_id=pk)
         return queryset
